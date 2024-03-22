@@ -2,6 +2,24 @@ import folium
 from folium.plugins import HeatMap
 from branca.colormap import LinearColormap
 from pesquisa_manual.lello_imoveis import casas
+import sqlite3
+
+def connect():
+    # Conecte-se ao banco de dados
+    conn = sqlite3.connect('database/imoveis.db')
+    cursor = conn.cursor()
+
+    # Consulta SQL para selecionar todos os imóveis
+    cursor.execute('SELECT * FROM imoveis')
+
+    # Obtenha todos os resultados da consulta
+    imoveis = cursor.fetchall()
+
+    # Feche a conexão com o banco de dados
+    conn.close()
+
+    return imoveis
+
 
 def get_color(price, min_price, max_price):
     colormap = LinearColormap(
@@ -13,12 +31,15 @@ def get_color(price, min_price, max_price):
 
 
 if __name__ == '__main__':
+    #conexão com banco de dados
+    imoveis = connect()
+    imoveis = sorted(imoveis, key=lambda x: x[5])
     # Crie o mapa
     mapa = folium.Map(location=[-23.5505199, -46.6333094], zoom_start=14)
 
     # Defina os limites de preço mínimo e máximo
-    min_price = 500
-    max_price = 50000
+    min_price = imoveis[0][5]
+    max_price = imoveis[-1][5]
 
     # Crie um colormap linear
     colormap = LinearColormap(
@@ -29,13 +50,10 @@ if __name__ == '__main__':
 
     # Para cada imóvel, crie um polígono com base na latitude, longitude e preço
 
-
-
-    imoveis = sorted(casas, key=lambda x: x["valorLocacao"])
     for imovel in imoveis:
-        lat = imovel["latitude"]
-        lon = imovel["longitude"]
-        price = imovel["valorLocacao"]
+        lat = imovel[1]
+        lon = imovel[2]
+        price = imovel[5]
         color = get_color(price, min_price, max_price)
 
         # Crie um polígono com centro em (lat, lon) e dimensões de 10m x 20m
@@ -50,9 +68,10 @@ if __name__ == '__main__':
 
         # Adicione um popup com informações adicionais
         try:
-            popup_text = f"Região: {imovel['regiao']}<br>" \
-                         f"Cidade: {imovel['cidade']}<br>" \
-                         f"Valor de Locação: R$ {imovel['valorLocacao']}"
+            popup_text = f"OLA FELIPAO" \
+                         f"Região: {imovel[3]}<br>" \
+                         f"Cidade: {imovel[4]}<br>" \
+                         f"Valor de Locação: R$ {imovel[5]}"
             popup = folium.Popup(popup_text, max_width=300)
             polygon.add_child(popup)
 
@@ -77,12 +96,12 @@ if __name__ == '__main__':
     # Crie o mapa
     Hmapa = folium.Map(location=[-23.5505199, -46.6333094], zoom_start=14)
 
-    min_price = imoveis[0]["valorLocacao"]
-    max_price = imoveis[-1]["valorLocacao"]
+    min_price = imoveis[0][5]
+    max_price = imoveis[-1][5]
 
     # Normaliza os preços para estar na mesma faixa que o colormap
     normalized_data = [
-        (imovel["latitude"], imovel["longitude"], (imovel["valorLocacao"] - min_price) / (max_price - min_price)) for
+        (imovel[1], imovel[2], (imovel[5] - min_price) / (max_price - min_price)) for
         imovel in imoveis]
 
 
